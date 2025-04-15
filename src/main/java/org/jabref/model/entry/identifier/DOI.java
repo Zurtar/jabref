@@ -124,7 +124,7 @@ public class DOI implements Identifier {
         String trimmedDoi = doi.trim();
 
         // HTTP URL decoding
-        if (doi.matches(HTTP_EXP) || doi.matches(SHORT_DOI_HTTP_EXP)) {
+        if (trimmedDoi.startsWith("http://") || trimmedDoi.startsWith("https://")) {
             // decodes path segment
             trimmedDoi = URLDecoder.decode(trimmedDoi, StandardCharsets.UTF_8);
         }
@@ -270,7 +270,8 @@ public class DOI implements Identifier {
         try {
             URI uri = new URI(base.getScheme(), base.getHost(), "/" + doi, null);
             return Optional.of(uri);
-        } catch (URISyntaxException e) {
+        } catch (
+                URISyntaxException e) {
             // should never happen
             LOGGER.error("{} could not be encoded as URI.", doi, e);
             return Optional.empty();
