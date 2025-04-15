@@ -1,10 +1,11 @@
 package org.jabref.model.entry.field;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import org.jabref.model.entry.KeywordList;
@@ -50,6 +51,14 @@ public enum SpecialField implements Field {
     private final HashMap<String, SpecialFieldValue> map;
     private final String fieldName;
 
+    private static final Map<String, SpecialField> NAME_TO_SPECIAL_FIELD = new HashMap<>();
+
+    static {
+        for (SpecialField field : SpecialField.values()) {
+            NAME_TO_SPECIAL_FIELD.put(field.getName().toLowerCase(Locale.ROOT), field);
+        }
+    }
+
     SpecialField(String fieldName, SpecialFieldValue... values) {
         this.fieldName = fieldName;
         this.values = new ArrayList<>();
@@ -71,9 +80,7 @@ public enum SpecialField implements Field {
     }
 
     public static Optional<SpecialField> fromName(String name) {
-        return Arrays.stream(SpecialField.values())
-                     .filter(field -> field.getName().equalsIgnoreCase(name))
-                     .findAny();
+        return Optional.ofNullable(NAME_TO_SPECIAL_FIELD.get(name.toLowerCase(Locale.ROOT)));
     }
 
     public boolean isSingleValueField() {

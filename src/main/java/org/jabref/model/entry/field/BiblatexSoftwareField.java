@@ -1,7 +1,9 @@
 package org.jabref.model.entry.field;
 
-import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import org.jabref.model.entry.types.BiblatexSoftwareEntryType;
@@ -20,6 +22,14 @@ public enum BiblatexSoftwareField implements Field {
     private final String name;
     private final String displayName;
     private final EnumSet<FieldProperty> properties;
+
+    private static final Map<String, BiblatexSoftwareField> NAME_TO_BIBLATEX_SOFTWARE_FIELD = new HashMap<>();
+
+    static {
+        for (BiblatexSoftwareField field : BiblatexSoftwareField.values()) {
+            NAME_TO_BIBLATEX_SOFTWARE_FIELD.put(field.getName().toLowerCase(Locale.ROOT), field);
+        }
+    }
 
     BiblatexSoftwareField(String name) {
         this.name = name;
@@ -49,9 +59,8 @@ public enum BiblatexSoftwareField implements Field {
         if (!(type instanceof BiblatexSoftwareEntryType)) {
             return Optional.empty();
         }
-        return Arrays.stream(BiblatexSoftwareField.values())
-                     .filter(field -> field.getName().equalsIgnoreCase(name))
-                     .findAny();
+
+        return Optional.ofNullable(NAME_TO_BIBLATEX_SOFTWARE_FIELD.get(name.toLowerCase(Locale.ROOT)));
     }
 
     @Override

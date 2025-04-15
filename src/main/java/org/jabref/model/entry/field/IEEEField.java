@@ -1,7 +1,9 @@
 package org.jabref.model.entry.field;
 
-import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -24,15 +26,21 @@ public enum IEEEField implements Field {
     private final String name;
     private final EnumSet<FieldProperty> properties;
 
+    private static final Map<String, IEEEField> NAME_TO_IEEE_FIELD = new HashMap<>();
+
+    static {
+        for (IEEEField field : IEEEField.values()) {
+            NAME_TO_IEEE_FIELD.put(field.getName().toLowerCase(Locale.ROOT), field);
+        }
+    }
+
     IEEEField(String name, FieldProperty first, FieldProperty... rest) {
         this.name = name;
         this.properties = EnumSet.of(first, rest);
     }
 
     public static Optional<IEEEField> fromName(String name) {
-        return Arrays.stream(IEEEField.values())
-                     .filter(field -> field.getName().equalsIgnoreCase(name))
-                     .findAny();
+        return Optional.ofNullable(NAME_TO_IEEE_FIELD.get(name.toLowerCase(Locale.ROOT)));
     }
 
     @Override

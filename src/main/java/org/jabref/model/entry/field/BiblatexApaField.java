@@ -1,7 +1,9 @@
 package org.jabref.model.entry.field;
 
-import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import org.jabref.model.entry.types.BiblatexApaEntryType;
@@ -20,6 +22,14 @@ public enum BiblatexApaField implements Field {
     private final String name;
     private final String displayName;
     private final EnumSet<FieldProperty> properties;
+
+    private static final Map<String, BiblatexApaField> NAME_TO_BIBLATEXTAPA_FIELD = new HashMap<>();
+
+    static {
+        for (BiblatexApaField field : BiblatexApaField.values()) {
+            NAME_TO_BIBLATEXTAPA_FIELD.put(field.getName().toLowerCase(Locale.ROOT), field);
+        }
+    }
 
     BiblatexApaField(String name) {
         this.name = name;
@@ -51,9 +61,8 @@ public enum BiblatexApaField implements Field {
             // Reason: The field should also be recognized in the presence of a BiblatexApa entry type.
             return Optional.empty();
         }
-        return Arrays.stream(BiblatexApaField.values())
-                     .filter(field -> field.getName().equalsIgnoreCase(name))
-                     .findAny();
+
+        return Optional.ofNullable(NAME_TO_BIBLATEXTAPA_FIELD.get(name.toLowerCase(Locale.ROOT)));
     }
 
     @Override

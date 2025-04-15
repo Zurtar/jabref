@@ -1,7 +1,9 @@
 package org.jabref.model.entry.field;
 
-import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 public enum AMSField implements Field {
@@ -11,6 +13,14 @@ public enum AMSField implements Field {
     private final String name;
     private final String displayName;
     private final EnumSet<FieldProperty> properties;
+
+    private static final Map<String, AMSField> NAME_TO_AMS_FIELD = new HashMap<>();
+
+    static {
+        for (AMSField field : AMSField.values()) {
+            NAME_TO_AMS_FIELD.put(field.getName().toLowerCase(Locale.ROOT), field);
+        }
+    }
 
     AMSField(String name) {
         this.name = name;
@@ -37,9 +47,7 @@ public enum AMSField implements Field {
     }
 
     public static <T> Optional<AMSField> fromName(T type, String name) {
-        return Arrays.stream(AMSField.values())
-                     .filter(field -> field.getName().equalsIgnoreCase(name))
-                     .findAny();
+        return Optional.ofNullable(NAME_TO_AMS_FIELD.get(name.toLowerCase(Locale.ROOT)));
     }
 
     @Override

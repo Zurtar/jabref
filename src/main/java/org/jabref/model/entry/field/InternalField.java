@@ -1,7 +1,9 @@
 package org.jabref.model.entry.field;
 
-import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -53,6 +55,14 @@ public enum InternalField implements Field {
     private final String name;
     private final EnumSet<FieldProperty> properties;
 
+    private static final Map<String, InternalField> NAME_TO_INTERNAL_FIELD = new HashMap<>();
+
+    static {
+        for (InternalField field : InternalField.values()) {
+            NAME_TO_INTERNAL_FIELD.put(field.getName().toLowerCase(Locale.ROOT), field);
+        }
+    }
+
     InternalField(String name) {
         this.name = name;
         this.properties = EnumSet.noneOf(FieldProperty.class);
@@ -69,9 +79,7 @@ public enum InternalField implements Field {
             return Optional.of(InternalField.KEY_FIELD);
         }
 
-        return Arrays.stream(InternalField.values())
-                     .filter(field -> field.getName().equalsIgnoreCase(name))
-                     .findAny();
+        return Optional.ofNullable(NAME_TO_INTERNAL_FIELD.get(name.toLowerCase(Locale.ROOT)));
     }
 
     @Override
