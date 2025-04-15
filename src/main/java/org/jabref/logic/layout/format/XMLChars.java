@@ -1,8 +1,12 @@
 package org.jabref.logic.layout.format;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.jabref.logic.layout.LayoutFormatter;
 import org.jabref.logic.util.strings.XmlCharsMap;
@@ -14,6 +18,7 @@ public class XMLChars implements LayoutFormatter {
 
     private static final XmlCharsMap XML_CHARS = new XmlCharsMap();
     private static final Map<String, Pattern> XML_CHARS_PATTERN_MAP = new HashMap<>();
+    private static final Pattern COMBINED_PATTERN;
 
     private static final Map<String, String> ASCII_TO_XML_CHARS = new HashMap<>();
 
@@ -25,9 +30,15 @@ public class XMLChars implements LayoutFormatter {
         ASCII_TO_XML_CHARS.put(">", "&gt;");
 
         // Compiling the regex once
-        for (String key : XML_CHARS.keySet()) {
-            XML_CHARS_PATTERN_MAP.put(key, Pattern.compile(key));
-        }
+//        for (String key : XML_CHARS.keySet()) {
+//            XML_CHARS_PATTERN_MAP.put(key, Pattern.compile(key));
+//        }
+
+        // Sort keys in descending order to ensure longer matches are found first.
+        List<String> keys = new ArrayList<>(XML_CHARS.keySet());
+        keys.sort((a, b) -> Integer.compare(b.length(), a.length()));
+        String combinedRegex = keys.stream().collect(Collectors.joining("|"));
+        COMBINED_PATTERN = Pattern.compile(combinedRegex);
     }
 
     @Override
@@ -38,16 +49,35 @@ public class XMLChars implements LayoutFormatter {
 
         String latexCommandFree = removeLatexCommands(fieldText);
         String formattedFieldText = firstFormat(latexCommandFree);
+        formattedFieldText = replace(formattedFieldText);
 
-        for (Map.Entry<String, String> entry : XML_CHARS.entrySet()) {
+
+/*        for (Map.Entry<String, String> entry : XML_CHARS.entrySet()) {
             String s = entry.getKey();
             String repl = entry.getValue();
             if (repl != null) {
                 Pattern p = XML_CHARS_PATTERN_MAP.get(s);
                 formattedFieldText = p.matcher(formattedFieldText).replaceAll(repl);
             }
-        }
+        }*/
         return restFormat(formattedFieldText);
+    }
+
+    public static String replace(String text) {
+        Matcher matcher = COMBINED_PATTERN.matcher(text);
+        StringBuffer sb = new StringBuffer();
+
+        while (matcher.find()) {
+            String match = matcher.group();
+            String replacement = XML_CHARS.get(match);
+
+            if (replacement == null) {
+                replacement = match;
+            }
+            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     private String removeLatexCommands(String fieldText) {
