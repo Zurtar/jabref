@@ -2,6 +2,7 @@ package org.jabref.logic.layout.format;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.jabref.logic.layout.LayoutFormatter;
 import org.jabref.logic.util.strings.XmlCharsMap;
@@ -12,6 +13,7 @@ import org.jabref.logic.util.strings.XmlCharsMap;
 public class XMLChars implements LayoutFormatter {
 
     private static final XmlCharsMap XML_CHARS = new XmlCharsMap();
+    private static final Map<String, Pattern> XML_CHARS_PATTERN_MAP = new HashMap<>();
 
     private static final Map<String, String> ASCII_TO_XML_CHARS = new HashMap<>();
 
@@ -21,6 +23,11 @@ public class XMLChars implements LayoutFormatter {
         ASCII_TO_XML_CHARS.put("<", "&lt;");
         ASCII_TO_XML_CHARS.put("\"", "&quot;");
         ASCII_TO_XML_CHARS.put(">", "&gt;");
+
+        // Compiling the regex once
+        for (String key : XML_CHARS.keySet()) {
+            XML_CHARS_PATTERN_MAP.put(key, Pattern.compile(key));
+        }
     }
 
     @Override
@@ -36,7 +43,8 @@ public class XMLChars implements LayoutFormatter {
             String s = entry.getKey();
             String repl = entry.getValue();
             if (repl != null) {
-                formattedFieldText = formattedFieldText.replaceAll(s, repl);
+                Pattern p = XML_CHARS_PATTERN_MAP.get(s);
+                formattedFieldText = p.matcher(formattedFieldText).replaceAll(repl);
             }
         }
         return restFormat(formattedFieldText);
