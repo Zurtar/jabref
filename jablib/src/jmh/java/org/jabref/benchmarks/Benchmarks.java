@@ -1,8 +1,11 @@
 package org.jabref.benchmarks;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
 
@@ -14,6 +17,10 @@ import org.jabref.logic.exporter.SelfContainedSaveConfiguration;
 import org.jabref.logic.formatter.bibtexfields.HtmlToLatexFormatter;
 import org.jabref.logic.importer.ParserResult;
 import org.jabref.logic.importer.fileformat.BibtexParser;
+import org.jabref.logic.journals.JournalAbbreviationRepository;
+import org.jabref.logic.journals.ltwa.LtwaEntry;
+import org.jabref.logic.journals.ltwa.LtwaRepository;
+import org.jabref.logic.journals.ltwa.PrefixTree;
 import org.jabref.logic.layout.format.HTMLChars;
 import org.jabref.logic.layout.format.LatexToUnicodeFormatter;
 import org.jabref.logic.os.OS;
@@ -34,6 +41,8 @@ import org.jabref.model.metadata.MetaData;
 import org.jabref.model.metadata.SaveOrder;
 
 import com.airhacks.afterburner.injection.Injector;
+import org.h2.mvstore.MVMap;
+import org.h2.mvstore.MVStore;
 import org.mockito.Answers;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -143,6 +152,52 @@ public class Benchmarks {
     public boolean keywordGroupContains() {
         KeywordGroup group = new WordKeywordGroup("testGroup", GroupHierarchyType.INDEPENDENT, StandardField.KEYWORDS, "testkeyword", false, ',', false);
         return group.containsAll(database.getEntries());
+    }
+
+    @Benchmark
+    public Path loadLtwaRepository() throws IOException {
+        try (InputStream resourceAsStream = JournalAbbreviationRepository.class.getResourceAsStream("/journals/ltwa-list.mv")) {
+            if (resourceAsStream == null) {
+                throw new IOException("LTWA repository not found");
+            } else {
+                Path tempDir = Files.createTempDirectory("jabref-ltwa");
+                Path tempLtwaList = tempDir.resolve("ltwa-list.mv");
+                Files.copy(resourceAsStream, tempLtwaList);
+                LtwaRepository ltwaRepository = new LtwaRepository(tempLtwaList);
+                return tempLtwaList;
+            }
+        }
+    }
+
+    @Benchmark
+    public void createLtwaRepository() throws IOException {
+        Path ltwaListFile = loadLtwaRepository();
+
+        PrefixTree<LtwaEntry> prefix = new PrefixTree<>();
+        PrefixTree<LtwaEntry> suffix = new PrefixTree<>();
+
+        final String PREFIX_MAP_NAME = "Prefixes";
+        final String SUFFIX_MAP_NAME = "Suffixes";
+
+        try (MVStore store = new MVStore.Builder().readOnly().fileName(ltwaListFile.toAbsolutePath().toString()).open()) {
+            MVMap<String, List<LtwaEntry>> prefixMap = store.openMap(PREFIX_MAP_NAME);
+            MVMap<String, List<LtwaEntry>> suffixMap = store.openMap(SUFFIX_MAP_NAME);
+
+            for (String key : prefixMap.keySet()) {
+                List<LtwaEntry> value = prefixMap.get(key);
+                if (value != null) {
+                    prefix.insert(key, value);
+                }
+            }
+
+            for (String key : suffixMap.keySet()) {
+                List<LtwaEntry> value = suffixMap.get(key);
+                if (value != null) {
+                    suffix.insert(key, value);
+                }
+            }
+
+        }
     }
 
     public static void main(String[] args) throws IOException {
