@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.jabref.logic.bibtex.FieldPreferences;
 import org.jabref.logic.citationkeypattern.CitationKeyPatternPreferences;
@@ -46,9 +47,15 @@ import org.h2.mvstore.MVStore;
 import org.mockito.Answers;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import static org.mockito.Mockito.mock;
 
@@ -152,52 +159,6 @@ public class Benchmarks {
     public boolean keywordGroupContains() {
         KeywordGroup group = new WordKeywordGroup("testGroup", GroupHierarchyType.INDEPENDENT, StandardField.KEYWORDS, "testkeyword", false, ',', false);
         return group.containsAll(database.getEntries());
-    }
-
-    @Benchmark
-    public Path loadLtwaRepository() throws IOException {
-        try (InputStream resourceAsStream = JournalAbbreviationRepository.class.getResourceAsStream("/journals/ltwa-list.mv")) {
-            if (resourceAsStream == null) {
-                throw new IOException("LTWA repository not found");
-            } else {
-                Path tempDir = Files.createTempDirectory("jabref-ltwa");
-                Path tempLtwaList = tempDir.resolve("ltwa-list.mv");
-                Files.copy(resourceAsStream, tempLtwaList);
-                LtwaRepository ltwaRepository = new LtwaRepository(tempLtwaList);
-                return tempLtwaList;
-            }
-        }
-    }
-
-    @Benchmark
-    public void createLtwaRepository() throws IOException {
-        Path ltwaListFile = loadLtwaRepository();
-
-        PrefixTree<LtwaEntry> prefix = new PrefixTree<>();
-        PrefixTree<LtwaEntry> suffix = new PrefixTree<>();
-
-        final String PREFIX_MAP_NAME = "Prefixes";
-        final String SUFFIX_MAP_NAME = "Suffixes";
-
-        try (MVStore store = new MVStore.Builder().readOnly().fileName(ltwaListFile.toAbsolutePath().toString()).open()) {
-            MVMap<String, List<LtwaEntry>> prefixMap = store.openMap(PREFIX_MAP_NAME);
-            MVMap<String, List<LtwaEntry>> suffixMap = store.openMap(SUFFIX_MAP_NAME);
-
-            for (String key : prefixMap.keySet()) {
-                List<LtwaEntry> value = prefixMap.get(key);
-                if (value != null) {
-                    prefix.insert(key, value);
-                }
-            }
-
-            for (String key : suffixMap.keySet()) {
-                List<LtwaEntry> value = suffixMap.get(key);
-                if (value != null) {
-                    suffix.insert(key, value);
-                }
-            }
-
-        }
     }
 
     public static void main(String[] args) throws IOException {

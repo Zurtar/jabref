@@ -426,10 +426,11 @@ tasks.test {
 }
 
 jmh {
-    warmupIterations = 5
-    iterations = 10
-    fork = 2
+//    warmupIterations = 5
+//    iterations = 10
+//    fork = 2
     zip64  = true
+    includes = listOf("createLtwa")
 }
 
 tasks.register<Test>("fetcherTest") {
